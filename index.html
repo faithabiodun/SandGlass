@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mantle Narrative Intelligence Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #000000;
+    --paper: #FFFFFF;
+    --paper-2: #F4F2EC;   /* subtle warm off-white for alt blocks */
+    --gray: #6B6B6B;
+    --gray-2: #9A9A9A;
+    --track: #E4E1D8;
+    --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: #000; color: #fff; }
+  a { color: inherit; text-decoration: none; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: var(--serif); }
+  .mono { font-family: var(--mono); }
+
+  /* ---------- Header ---------- */
+  header.top {
+    position: sticky; top: 0; z-index: 30; background: var(--paper);
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .top-in { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; max-width: 1080px; margin: 0 auto; }
+  .wordmark { font-family: var(--serif); font-weight: 900; font-size: 26px; letter-spacing: -0.02em; cursor: pointer; }
+  .wordmark small { font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray); vertical-align: middle; margin-left: 10px; }
+  .top-tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    border: 1.5px solid var(--ink); padding: 9px 14px; white-space: nowrap;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 16px 26px; border: 1.5px solid var(--ink); cursor: pointer; background: var(--paper); color: var(--ink);
+    display: inline-flex; align-items: center; gap: 12px; transition: background .12s ease, color .12s ease;
+    line-height: 1;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-fill { background: var(--ink); color: var(--paper); }
+  .btn-fill:hover { background: var(--paper); color: var(--ink); }
+  .btn[disabled] { opacity: .4; cursor: not-allowed; }
+  .btn .arw { font-family: var(--sans); font-weight: 700; }
+
+  .eyebrow-box {
+    display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    border: 1.5px solid var(--ink); padding: 10px 16px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Hero ---------- */
+  #hero .wrap { padding-top: 62px; padding-bottom: 30px; }
+  .hero-h1 {
+    font-family: var(--serif); font-weight: 900; letter-spacing: -0.03em; line-height: 0.98;
+    font-size: clamp(46px, 8.5vw, 104px); margin: 26px 0 0; max-width: 16ch;
+  }
+  .hero-lede {
+    font-size: clamp(17px, 2.1vw, 21px); line-height: 1.5; max-width: 60ch; margin: 30px 0 0; color: #1A1A1A;
+  }
+  .hero-lede b { font-weight: 700; }
+  .hero-cta { margin-top: 36px; display: flex; gap: 16px; flex-wrap: wrap; }
+
+  /* ---------- Numbered rows (how it works) ---------- */
+  .band { border-top: 1.5px solid var(--ink); margin-top: 62px; }
+  .band-label {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gray);
+    padding: 22px 0 0;
+  }
+  .steps-box { border: 1.5px solid var(--ink); margin: 22px 0 0; }
+  .step-row { display: grid; grid-template-columns: 90px 1fr; gap: 22px; padding: 34px 30px; border-top: 1.5px solid var(--ink); }
+  .step-row:first-child { border-top: none; }
+  .step-row .snum { font-family: var(--mono); font-size: 15px; color: var(--gray); padding-top: 8px; }
+  .step-row h3 { font-family: var(--serif); font-weight: 900; font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -0.01em; margin: 0 0 10px; }
+  .step-row p { margin: 0; font-size: 16px; line-height: 1.55; max-width: 62ch; color: #1A1A1A; }
+
+  /* ---------- Generic section ---------- */
+  .sec { border-top: 1.5px solid var(--ink); margin-top: 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 18px; padding: 30px 0 0; }
+  .sec-head .no { font-family: var(--mono); font-size: 13px; color: var(--gray); letter-spacing: 0.1em; }
+  .sec-head h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 3.6vw, 40px); letter-spacing: -0.02em; margin: 0; }
+  .sec-head .aside { margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); align-self: center; }
+  .sec-body { padding: 24px 0 40px; }
+
+  /* ---------- Input form ---------- */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .field { border: 1.5px solid var(--ink); border-right: none; border-bottom: none; padding: 20px; }
+  .field:nth-child(2) { border-right: 1.5px solid var(--ink); }
+  .field:nth-child(3), .field:nth-child(4) { border-bottom: none; }
+  .form-grid { border-bottom: 1.5px solid var(--ink); }
+  .field label {
+    display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .field label .k { margin-left: auto; color: var(--gray); text-transform: none; letter-spacing: 0.04em; font-size: 11px; }
+  textarea {
+    width: 100%; min-height: 120px; resize: vertical; background: var(--paper); color: var(--ink);
+    border: 1.5px solid var(--ink); padding: 13px 14px; font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  }
+  textarea::placeholder { color: var(--gray-2); }
+  textarea:focus, input.text:focus, select:focus { outline: 3px solid var(--ink); outline-offset: -1.5px; }
+  .config { display: grid; grid-template-columns: 2fr 1fr; border: 1.5px solid var(--ink); border-top: none; }
+  .config > div { padding: 20px; }
+  .config > div:first-child { border-right: 1.5px solid var(--ink); }
+  input.text, select {
+    width: 100%; background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink);
+    padding: 13px 14px; font-family: var(--mono); font-size: 13px; appearance: none;
+  }
+  select { cursor: pointer; }
+  .key-note { font-family: var(--mono); font-size: 11px; line-height: 1.5; color: var(--gray); margin-top: 10px; }
+  .key-note b { color: var(--ink); }
+  .form-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 24px; }
+  .form-actions .sp { flex: 1; }
+  .err {
+    display: none; margin-top: 18px; border: 1.5px solid var(--ink); padding: 14px 16px;
+    font-family: var(--mono); font-size: 13px; background: var(--ink); color: var(--paper);
+  }
+
+  /* ---------- Thinking overlay ---------- */
+  .thinking { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(255,255,255,0.94); place-items: center; }
+  .thinking.on { display: grid; }
+  .think-card { width: min(560px, 92vw); background: var(--paper); border: 1.5px solid var(--ink); }
+  .think-top { border-bottom: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); padding: 14px 22px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .think-top .blink { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .think-body { padding: 26px 24px 28px; }
+  .think-body h3 { font-family: var(--serif); font-weight: 900; font-size: 26px; letter-spacing: -0.01em; margin: 0 0 20px; }
+  .tstep { display: flex; align-items: center; gap: 14px; padding: 9px 0; font-family: var(--mono); font-size: 14px; color: var(--gray-2); border-top: 1px solid var(--track); }
+  .tstep:first-of-type { border-top: none; }
+  .tstep .mk { width: 16px; text-align: center; }
+  .tstep.active { color: var(--ink); }
+  .tstep.done { color: var(--ink); }
+  .tstep.active .mk::after { content: "▸"; }
+  .tstep.done .mk::after { content: "✓"; }
+  .tstep .mk::after { content: "·"; }
+
+  /* ---------- Report ---------- */
+  #report .wrap { padding-top: 0; }
+  .masthead { border-bottom: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); }
+  .masthead-in { max-width: 1080px; margin: 0 auto; padding: 12px 28px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+  .report-title { padding: 40px 0 8px; }
+  .report-title .meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); display: flex; gap: 14px; flex-wrap: wrap; }
+  .report-title h1 { font-family: var(--serif); font-weight: 900; letter-spacing: -0.03em; line-height: 1.0; font-size: clamp(30px, 5vw, 56px); margin: 16px 0 0; max-width: 20ch; }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); border: 1.5px solid var(--ink); }
+  .kpi { padding: 20px; border-right: 1.5px solid var(--ink); }
+  .kpi:last-child { border-right: none; }
+  .kpi .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); }
+  .kpi .val { font-family: var(--serif); font-weight: 900; font-size: 46px; line-height: 1; letter-spacing: -0.02em; margin: 12px 0 4px; }
+  .kpi .val.word { font-size: 30px; }
+  .kpi .val .arw { font-family: var(--mono); font-size: 18px; vertical-align: middle; margin-left: 4px; }
+  .kpi .meter { height: 6px; background: var(--track); margin-top: 10px; }
+  .kpi .meter i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .9s cubic-bezier(.2,.7,.2,1); }
+  .kpi .cap { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--gray); margin-top: 10px; line-height: 1.4; }
+  @media (max-width: 820px) { .kpis { grid-template-columns: 1fr 1fr; } .kpi:nth-child(2) { border-right: none; } .kpi:nth-child(1), .kpi:nth-child(2) { border-bottom: 1.5px solid var(--ink); } }
+
+  /* Ecosystem */
+  .eco { display: grid; grid-template-columns: repeat(5, 1fr); border: 1.5px solid var(--ink); }
+  .eco .cell { padding: 18px 16px; border-right: 1.5px solid var(--ink); display: flex; flex-direction: column; min-height: 140px; }
+  .eco .cell:last-child { border-right: none; }
+  .eco .cell .name { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray); display: flex; justify-content: space-between; }
+  .eco .cell .v { font-family: var(--serif); font-weight: 900; font-size: 26px; letter-spacing: -0.01em; margin: 10px 0 6px; line-height: 1.05; }
+  .eco .cell .note { font-size: 12.5px; line-height: 1.4; color: #222; margin-top: auto; }
+  @media (max-width: 820px) { .eco { grid-template-columns: 1fr 1fr; } .eco .cell { border-bottom: 1.5px solid var(--ink); } .eco .cell:nth-child(2n){border-right:none;} }
+
+  /* Source intelligence */
+  .src { display: grid; grid-template-columns: 1fr 1fr; border: 1.5px solid var(--ink); }
+  .src .box { padding: 20px; border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
+  .src .box:nth-child(2n) { border-right: none; }
+  .src .box:nth-last-child(-n+2) { border-bottom: none; }
+  .src .box .t { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .src .box .t .n { color: var(--gray); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; border: 1.5px solid var(--ink); padding: 6px 10px; display: inline-flex; align-items: center; gap: 7px; text-transform: uppercase; }
+  .chip .g { font-size: 10px; }
+  .chip.fill { background: var(--ink); color: var(--paper); }
+  @media (max-width: 700px) { .src, .form-grid { grid-template-columns: 1fr; } .src .box { border-right: none; } .config { grid-template-columns: 1fr; } .config > div:first-child { border-right: none; border-bottom: 1.5px solid var(--ink); } }
+
+  /* Narrative layers */
+  .layers { border: 1.5px solid var(--ink); }
+  .layer { padding: 30px; border-top: 1.5px solid var(--ink); position: relative; }
+  .layer:first-child { border-top: none; }
+  .layer .kick { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray); }
+  .layer h3 { font-family: var(--serif); font-weight: 900; font-size: clamp(24px, 3.4vw, 36px); letter-spacing: -0.02em; margin: 10px 0 14px; }
+  .layer p { margin: 0 0 16px; font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
+  .layer .trig { border: 1.5px solid var(--ink); padding: 0; margin: 0 0 16px; max-width: 74ch; }
+  .layer .trig .th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; background: var(--ink); color: var(--paper); padding: 7px 12px; }
+  .layer .trig .tb { padding: 12px 14px; font-size: 14.5px; line-height: 1.5; }
+  .layer .lnum { position: absolute; top: 24px; right: 30px; font-family: var(--serif); font-weight: 900; font-size: 46px; color: var(--track); line-height: 1; user-select: none; }
+
+  /* Evidence matrix */
+  .matrix { border: 1.5px solid var(--ink); }
+  .mrow { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 18px; padding: 16px 20px; border-top: 1.5px solid var(--ink); }
+  .mrow:first-child { border-top: none; }
+  .mrow .mk { font-family: var(--mono); font-size: 18px; text-align: center; }
+  .mrow .factor { font-family: var(--serif); font-weight: 600; font-size: 18px; }
+  .mrow .factor small { display: block; font-family: var(--sans); font-weight: 400; font-size: 12.5px; color: var(--gray); margin-top: 2px; }
+  .mrow .rate { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; text-align: right; white-space: nowrap; }
+  .mfoot { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 20px; border-top: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); }
+  .mfoot .l { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .mfoot .r { display: flex; align-items: center; gap: 14px; }
+  .mfoot .bar { width: 180px; height: 8px; background: #3a3a3a; }
+  .mfoot .bar i { display: block; height: 100%; background: var(--paper); width: 0; transition: width 1s ease; }
+  .mfoot .r b { font-family: var(--serif); font-weight: 900; font-size: 26px; }
+
+  /* Timeline */
+  .timeline { border: 1.5px solid var(--ink); }
+  .tl { display: grid; grid-template-columns: 130px 1fr; border-top: 1.5px solid var(--ink); }
+  .tl:first-child { border-top: none; }
+  .tl .when { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray); padding: 20px; border-right: 1.5px solid var(--ink); display: flex; align-items: flex-start; gap: 8px; }
+  .tl .body { padding: 20px; }
+  .tl .body .ev { font-family: var(--serif); font-weight: 700; font-size: 18px; }
+  .tl .body .ev small { display: block; font-family: var(--sans); font-weight: 400; font-size: 14px; color: #222; margin-top: 5px; line-height: 1.5; }
+
+  /* Verdict */
+  .verdict { border: 1.5px solid var(--ink); }
+  .verdict .vh { background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; padding: 12px 22px; display: flex; justify-content: space-between; }
+  .verdict .vb { padding: 30px; }
+  .verdict .vb p { font-family: var(--serif); font-weight: 600; font-size: clamp(20px, 2.8vw, 28px); line-height: 1.35; margin: 0; max-width: 40ch; }
+
+  .why { border: 1.5px solid var(--ink); border-top: none; padding: 34px 30px; text-align: center; }
+  .why h3 { font-family: var(--serif); font-weight: 900; font-size: 30px; letter-spacing: -0.01em; margin: 0 0 14px; }
+  .why p { font-size: 16.5px; line-height: 1.6; max-width: 60ch; margin: 0 auto; color: #1A1A1A; }
+  .why p b { font-weight: 700; }
+
+  .report-actions { display: flex; gap: 14px; justify-content: center; padding: 34px 0 10px; flex-wrap: wrap; }
+
+  footer { border-top: 1.5px solid var(--ink); margin-top: 20px; }
+  footer .fin { max-width: 1080px; margin: 0 auto; padding: 24px 28px 44px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+  @media (max-width: 700px) {
+    .step-row { grid-template-columns: 1fr; gap: 8px; }
+    .tl { grid-template-columns: 92px 1fr; }
+    .hero-h1 { font-size: clamp(40px, 13vw, 60px); }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="wordmark" onclick="goHome()">Mantle<span style="font-weight:900"> Narrative</span><small>Intelligence Agent</small></div>
+    <div class="top-tag">Research Challenge · Track 02</div>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<main id="hero">
+  <div class="wrap">
+    <span class="eyebrow-box">Narrative Intelligence · Mantle Ecosystem</span>
+    <h1 class="hero-h1">Read the narrative before it becomes consensus.</h1>
+    <p class="hero-lede">The Mantle Narrative Intelligence Agent turns scattered signal — <b>X discussion, onchain &amp; TVL data, ecosystem news, and prediction markets</b> — into one structured, three-layer research verdict. Detect the dominant narrative, see what shifted, and forecast what comes next.</p>
+    <div class="hero-cta">
+      <button class="btn btn-fill" onclick="launch()">Run an analysis <span class="arw">→</span></button>
+      <button class="btn" onclick="launch(true)">See a live Mantle example</button>
+    </div>
+
+    <div class="band">
+      <div class="band-label">How it works</div>
+      <div class="steps-box">
+        <div class="step-row">
+          <div class="snum">01</div>
+          <div>
+            <h3>Feed the signals</h3>
+            <p>Paste X discussion, onchain &amp; TVL data, ecosystem news, and market / prediction data. The agent reasons over whatever you give it — no fixed schema, no dashboards to wire up.</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="snum">02</div>
+          <div>
+            <h3>The agent reads the room</h3>
+            <p>Claude weighs social conviction against onchain flow, isolates the catalyst that moved sentiment, and measures where the story and the numbers diverge.</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="snum">03</div>
+          <div>
+            <h3>Get the verdict</h3>
+            <p>A three-layer narrative report: the dominant narrative, the shift and its trigger, and the forward position if it holds — with an evidence matrix and a confidence score.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== INPUT ===================== -->
+<main id="input" class="hidden">
+  <div class="wrap">
+    <div class="sec" style="border-top:none">
+      <div class="sec-head" style="padding-top:44px"><span class="no">◆</span><h2>Feed the agent your signals</h2><span class="aside">Paste what you have</span></div>
+      <div class="sec-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>X / Social Discussion <span class="k">sentiment · conviction</span></label>
+            <textarea id="src-social" placeholder="Paste X posts, threads, KOL takes, Discord chatter about Mantle…"></textarea>
+          </div>
+          <div class="field">
+            <label>Onchain / TVL Data <span class="k">flow · growth</span></label>
+            <textarea id="src-onchain" placeholder="Paste TVL figures, RWA growth, bridge flows, protocol metrics…"></textarea>
+          </div>
+          <div class="field">
+            <label>News &amp; Ecosystem <span class="k">catalysts</span></label>
+            <textarea id="src-news" placeholder="Paste headlines, launches, partnerships, integrations…"></textarea>
+          </div>
+          <div class="field">
+            <label>Market / Prediction <span class="k">forward odds</span></label>
+            <textarea id="src-market" placeholder="Paste price action, funding, prediction-market odds (e.g. InsightX)…"></textarea>
+          </div>
+        </div>
+        <div class="config">
+          <div>
+            <label class="mono" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:12px">Anthropic API Key <span style="color:var(--gray);text-transform:none">— stays in your browser</span></label>
+            <input class="text" id="api-key" type="password" placeholder="sk-ant-…  (used only for the live call)" />
+            <div class="key-note">Used directly from your browser to call Claude. <b>Never stored or sent to any server we control.</b> Leave blank to run the built-in Mantle example.</div>
+          </div>
+          <div>
+            <label class="mono" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:12px">Model</label>
+            <select id="model">
+              <option value="claude-opus-4-8">Claude Opus 4.8 — deepest reasoning</option>
+              <option value="claude-sonnet-5">Claude Sonnet 5 — fast &amp; capable</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-fill" id="run-btn" onclick="run()">Run analysis <span class="arw">→</span></button>
+          <button class="btn" onclick="loadDemo()">Load Mantle Q1 2026 example</button>
+          <div class="sp"></div>
+          <button class="btn" onclick="goHome()">← Back</button>
+        </div>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== THINKING ===================== -->
+<div class="thinking" id="thinking">
+  <div class="think-card">
+    <div class="think-top"><span>Analyst · Working</span><span class="blink">█</span></div>
+    <div class="think-body">
+      <h3>Reading the Mantle narrative</h3>
+      <div id="steps"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== REPORT ===================== -->
+<main id="report" class="hidden">
+  <div class="masthead">
+    <div class="masthead-in"><span id="mast-l">Mantle Narrative Intelligence</span><span>The Verdict · Research Note</span></div>
+  </div>
+  <div class="wrap">
+    <div class="report-title">
+      <div class="meta"><span>3-Layer Narrative Report</span><span id="meta-date"></span><span id="meta-model"></span></div>
+      <h1 id="headline"></h1>
+    </div>
+
+    <!-- 01 Overview -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">01</span><h2>Overview</h2></div>
+      <div class="sec-body">
+        <p id="exec-summary" style="font-size:17px;line-height:1.6;max-width:76ch;margin:0 0 26px"></p>
+        <div class="kpis" id="kpis"></div>
+      </div>
+    </div>
+
+    <!-- 02 Market Pulse -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">02</span><h2>Market Pulse</h2><span class="aside">Mantle ecosystem</span></div>
+      <div class="sec-body"><div class="eco" id="eco"></div></div>
+    </div>
+
+    <!-- 03 Source Intelligence -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">03</span><h2>Source Intelligence</h2><span class="aside">Directional signals</span></div>
+      <div class="sec-body"><div class="src" id="sources"></div></div>
+    </div>
+
+    <!-- 04 Narrative Analysis -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">04</span><h2>Narrative Analysis</h2><span class="aside">Belief · Shift · Forward</span></div>
+      <div class="sec-body"><div class="layers" id="layers"></div></div>
+    </div>
+
+    <!-- 05 Evidence -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">05</span><h2>Evidence Matrix</h2><span class="aside">Why this read</span></div>
+      <div class="sec-body"><div class="matrix" id="matrix"></div></div>
+    </div>
+
+    <!-- 06 Timeline -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">06</span><h2>Narrative Catalysts</h2><span class="aside">The sequence</span></div>
+      <div class="sec-body"><div class="timeline" id="timeline"></div></div>
+    </div>
+
+    <!-- 07 Verdict -->
+    <div class="sec">
+      <div class="sec-head"><span class="no">07</span><h2>The Verdict</h2></div>
+      <div class="sec-body">
+        <div class="verdict">
+          <div class="vh"><span>Strategic Takeaway</span><span>Analyst</span></div>
+          <div class="vb"><p id="takeaway"></p></div>
+        </div>
+        <div class="why">
+          <h3>Why this matters</h3>
+          <p><b>Narratives emerge before capital flows.</b> By combining onchain metrics, ecosystem news, social discussion, and AI reasoning, the agent helps researchers see the shift before it is obvious — turning scattered signal into a defensible position.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-actions">
+      <button class="btn btn-fill" id="copy-btn" onclick="copyReport()">Copy report</button>
+      <button class="btn" onclick="launch()">Run another analysis</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="fin"><span>Mantle Narrative Intelligence Agent</span><span>Mantle Research Challenge · Track 02 · Powered by Claude</span></div>
+</footer>
+
+<script>
+/* ================= View routing ================= */
+function show(id){ ['hero','input','report'].forEach(v=>document.getElementById(v).classList.toggle('hidden', v!==id)); window.scrollTo(0,0); }
+function goHome(){ show('hero'); }
+function launch(withDemo){ show('input'); if(withDemo) loadDemo(); }
+
+/* ================= Thinking steps ================= */
+const STEPS = [
+  'Reading X discussions',
+  'Parsing onchain activity',
+  'Evaluating TVL movement',
+  'Identifying narrative catalysts',
+  'Measuring sentiment divergence',
+  'Forecasting narrative continuation',
+  'Building research report',
+];
+function renderSteps(){
+  const el = document.getElementById('steps');
+  el.innerHTML = STEPS.map(s=>`<div class="tstep"><span class="mk"></span><span>${s}</span></div>`).join('');
+  return [...el.querySelectorAll('.tstep')];
+}
+let stepTimer=null;
+function runStepsUntilDone(){
+  const nodes = renderSteps();
+  document.getElementById('thinking').classList.add('on');
+  let i=0;
+  const advance=()=>{
+    if(i>0){ nodes[i-1].classList.remove('active'); nodes[i-1].classList.add('done'); }
+    if(i<nodes.length){ nodes[i].classList.add('active'); i++; stepTimer=setTimeout(advance, 600+Math.random()*260); }
+    else { i=0; stepTimer=setTimeout(advance, 900); }
+  };
+  advance();
+}
+function finishSteps(){
+  clearTimeout(stepTimer);
+  [...document.querySelectorAll('#steps .tstep')].forEach(n=>{ n.classList.remove('active'); n.classList.add('done'); });
+  setTimeout(()=>document.getElementById('thinking').classList.remove('on'), 420);
+}
+
+/* ================= Prompt + Claude ================= */
+const SYSTEM_PROMPT = `You are the Mantle Narrative Intelligence Agent — an elite onchain narrative research analyst in the style of Delphi Digital or Messari, specialized in the Mantle ecosystem.
+
+Mantle positions itself as the distribution layer for real-world assets (RWAs) and the settlement layer for the agent economy. Recognize and reference by name when the sources support it: RWA TVL, Maple Finance / syrupUSDT via Aave, xStocks / tokenized equities (e.g. SpaceX SPCXx), InsightX (AI-native prediction market), QuestFlow, ERC-8004 agent identity, AI Agent Skills, Agent Scaffold, x402 payments.
+
+You receive up to four source buckets: social/X, onchain/TVL, news, and market/prediction. Reason across ALL of them and produce a rigorous three-layer narrative report:
+- Layer 1 — Dominant Narrative: what the market believes right now.
+- Layer 2 — Sentiment Shift: what changed and what specifically triggered it.
+- Layer 3 — Forward Position: what likely comes next if the narrative holds.
+
+Ground every claim in the provided sources; cite the numbers/events you were given. Do not invent data that contradicts the sources; if a bucket is empty, infer conservatively and lower confidence.
+
+Return ONLY a single valid JSON object (no markdown, no code fences, no prose) matching EXACTLY this shape:
+{
+  "headline": "one punchy sentence, the market-moving read",
+  "executiveSummary": "3-4 sentence institutional summary",
+  "kpis": {
+    "narrativeStrength": <int 0-100>,
+    "marketSentiment": "<Strongly Bullish|Bullish|Neutral|Cautious|Bearish>",
+    "sentimentScore": <int 0-100>,
+    "narrativeMomentum": <int 0-100>,
+    "aiConfidence": <int 0-100>
+  },
+  "ecosystem": [
+    {"name":"RWA Growth","value":"<short e.g. $247.5M>","note":"<<=8 words>","tone":"pos|cau|neg"},
+    {"name":"Agent Economy","value":"...","note":"...","tone":"pos|cau|neg"},
+    {"name":"Prediction Mkts","value":"...","note":"...","tone":"pos|cau|neg"},
+    {"name":"Ecosystem","value":"...","note":"...","tone":"pos|cau|neg"},
+    {"name":"Settlement","value":"...","note":"...","tone":"pos|cau|neg"}
+  ],
+  "sources": [
+    {"label":"X / Social","chips":[{"text":"<signal>","tone":"pos|cau|neg|neutral"}]},
+    {"label":"Onchain / TVL","chips":[...]},
+    {"label":"News & Ecosystem","chips":[...]},
+    {"label":"Market / Prediction","chips":[...]}
+  ],
+  "layers": {
+    "one": {"body":"<=90 words","chips":[{"text":"...","tone":"pos|cau|neg|neutral"}]},
+    "two": {"body":"<=90 words","trigger":"<the specific catalyst that flipped sentiment>","chips":[...]},
+    "three": {"body":"<=90 words","chips":[...]}
+  },
+  "evidence": [
+    {"factor":"TVL Growth","detail":"<short>","rating":"<Strong Positive|Positive|Bullish|Growing|Neutral|Cautious|Negative>","tone":"pos|cau|neg"}
+  ],
+  "overallConfidence": <int 0-100>,
+  "timeline": [
+    {"when":"<Q1 2026 / date>","event":"<title>","detail":"<short>","impact":"pos|cau|neg"}
+  ],
+  "takeaway": "one strong forward-looking sentence a researcher could act on"
+}
+Provide exactly 5 ecosystem items, 3-5 evidence rows, and 3-5 timeline entries. Keep every string tight and analyst-grade.`;
+
+function buildUserMessage(s){
+  return `Analyze the current Mantle narrative from these sources.\n\n=== X / SOCIAL ===\n${s.social||'(none provided)'}\n\n=== ONCHAIN / TVL ===\n${s.onchain||'(none provided)'}\n\n=== NEWS & ECOSYSTEM ===\n${s.news||'(none provided)'}\n\n=== MARKET / PREDICTION ===\n${s.market||'(none provided)'}\n\nReturn only the JSON object.`;
+}
+function extractJson(text){
+  let t = text.trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  const a=t.indexOf('{'), b=t.lastIndexOf('}');
+  if(a===-1||b===-1) throw new Error('No JSON object found in the model response.');
+  return JSON.parse(t.slice(a,b+1));
+}
+async function callClaude(apiKey, model, sources){
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({ model, max_tokens:4000, system:SYSTEM_PROMPT, messages:[{role:'user',content:buildUserMessage(sources)}] }),
+  });
+  if(!res.ok){ let m=`Request failed (${res.status})`; try{const e=await res.json(); if(e.error&&e.error.message)m=e.error.message;}catch(_){} throw new Error(m); }
+  const data = await res.json();
+  const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  return extractJson(text);
+}
+
+/* ================= Run ================= */
+let currentModelName='Claude Opus 4.8';
+function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
+function hideErr(){ document.getElementById('err').style.display='none'; }
+
+async function _run(){
+  hideErr();
+  const sources={ social:val('src-social'), onchain:val('src-onchain'), news:val('src-news'), market:val('src-market') };
+  const apiKey=val('api-key');
+  const sel=document.getElementById('model'); const model=sel.value;
+  currentModelName=sel.options[sel.selectedIndex].text.split(' — ')[0];
+  if(!sources.social&&!sources.onchain&&!sources.news&&!sources.market){ showErr('Paste at least one source, or use “Load Mantle Q1 2026 example”.'); return; }
+  if(!apiKey){ showErr('Enter your Anthropic API key to run a live analysis — or click “Load Mantle Q1 2026 example”, then Run, to see the built-in demo.'); return; }
+  const btn=document.getElementById('run-btn'); btn.disabled=true;
+  runStepsUntilDone(); const t0=Date.now();
+  try{
+    const report=await callClaude(apiKey,model,sources);
+    await new Promise(r=>setTimeout(r, Math.max(0, 2600-(Date.now()-t0))));
+    finishSteps(); setTimeout(()=>renderReport(report), 460);
+  }catch(err){ finishSteps(); setTimeout(()=>showErr(err.message||'Something went wrong calling the model.'), 480); }
+  finally{ btn.disabled=false; }
+}
+function val(id){ return document.getElementById(id).value.trim(); }
+function runDemoReport(){ runStepsUntilDone(); currentModelName='Mantle Q1 2026 Example'; setTimeout(()=>{ finishSteps(); setTimeout(()=>renderReport(DEMO_REPORT),460); }, 3300); }
+function run(){ const apiKey=val('api-key'); if(!apiKey && val('src-social')===DEMO_SOURCES.social.trim()){ hideErr(); runDemoReport(); return; } _run(); }
+
+/* ================= Rendering ================= */
+const GLYPH = { pos:'▲', cau:'◆', neg:'▼', neutral:'●' };
+const g = t => GLYPH[t] || '●';
+
+function renderReport(r){
+  document.getElementById('meta-date').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}).toUpperCase();
+  document.getElementById('meta-model').textContent = currentModelName.toUpperCase();
+  document.getElementById('headline').textContent = r.headline||'';
+  document.getElementById('exec-summary').textContent = r.executiveSummary||'';
+
+  // KPIs
+  const k=r.kpis||{};
+  const arrow = v => v>=60?'▲':v>=40?'◆':'▼';
+  const defs=[
+    {lbl:'Narrative Strength', val:k.narrativeStrength, bar:k.narrativeStrength, cap:'Conviction behind the story'},
+    {lbl:'Market Sentiment', word:k.marketSentiment, bar:k.sentimentScore, cap:'Directional read of the crowd'},
+    {lbl:'Narrative Momentum', val:k.narrativeMomentum, bar:k.narrativeMomentum, cap:'Rate the story is accelerating'},
+    {lbl:'AI Confidence', val:k.aiConfidence, suffix:'%', bar:k.aiConfidence, cap:'Evidence agreement across sources'},
+  ];
+  document.getElementById('kpis').innerHTML = defs.map(d=>{
+    const bar=Math.max(0,Math.min(100,d.bar||0));
+    const value = d.word
+      ? `<div class="val word">${d.word} <span class="arw">${arrow(bar)}</span></div>`
+      : `<div class="val">${d.val??'—'}${d.suffix||''} <span class="arw">${arrow(bar)}</span></div>`;
+    return `<div class="kpi"><div class="lbl">${d.lbl}</div>${value}<div class="meter"><i data-w="${bar}"></i></div><div class="cap">${d.cap}</div></div>`;
+  }).join('');
+
+  // Ecosystem
+  document.getElementById('eco').innerHTML = (r.ecosystem||[]).map(e=>`
+    <div class="cell"><div class="name"><span>${e.name}</span><span>${g(e.tone)}</span></div>
+      <div class="v">${e.value||''}</div><div class="note">${e.note||''}</div></div>`).join('');
+
+  // Sources
+  document.getElementById('sources').innerHTML = (r.sources||[]).map(s=>`
+    <div class="box"><div class="t"><span class="n">▸</span>${s.label}</div>
+      <div class="chips">${(s.chips||[]).map(c=>chip(c)).join('')}</div></div>`).join('');
+
+  // Layers
+  const L=r.layers||{};
+  const meta=[
+    {key:'one', kick:'Layer 01 · Dominant Narrative', title:'What the market believes now', num:'I'},
+    {key:'two', kick:'Layer 02 · Sentiment Shift', title:'What changed — and what triggered it', num:'II'},
+    {key:'three', kick:'Layer 03 · Forward Position', title:'What comes next if it holds', num:'III'},
+  ];
+  document.getElementById('layers').innerHTML = meta.map(m=>{
+    const d=L[m.key]||{};
+    const trig = d.trigger ? `<div class="trig"><div class="th">Trigger</div><div class="tb">${d.trigger}</div></div>` : '';
+    return `<div class="layer"><span class="lnum">${m.num}</span><div class="kick">${m.kick}</div>
+      <h3>${m.title}</h3><p>${d.body||''}</p>${trig}<div class="chips">${(d.chips||[]).map(c=>chip(c)).join('')}</div></div>`;
+  }).join('');
+
+  // Evidence
+  document.getElementById('matrix').innerHTML = (r.evidence||[]).map(e=>`
+    <div class="mrow"><div class="mk">${g(e.tone)}</div>
+      <div class="factor">${e.factor}<small>${e.detail||''}</small></div>
+      <div class="rate">${e.rating||''}</div></div>`).join('') +
+    `<div class="mfoot"><div class="l">Overall Confidence</div>
+      <div class="r"><div class="bar"><i id="conf-bar"></i></div><b>${r.overallConfidence??'—'}%</b></div></div>`;
+
+  // Timeline
+  document.getElementById('timeline').innerHTML = (r.timeline||[]).map(t=>`
+    <div class="tl"><div class="when"><span>${g(t.impact)}</span><span>${t.when||''}</span></div>
+      <div class="body"><div class="ev">${t.event||''}<small>${t.detail||''}</small></div></div></div>`).join('');
+
+  document.getElementById('takeaway').textContent = r.takeaway||'';
+  lastReport=r; show('report');
+
+  // animate meters after paint
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    document.querySelectorAll('#kpis .meter i').forEach(el=>el.style.width=(el.dataset.w||0)+'%');
+    const cb=document.getElementById('conf-bar'); if(cb) cb.style.width=(r.overallConfidence||0)+'%';
+  });});
+}
+function chip(c){ const cls = c.tone==='pos' ? 'chip fill' : 'chip'; return `<span class="${cls}"><span class="g">${g(c.tone)}</span>${c.text}</span>`; }
+
+/* ================= Copy ================= */
+let lastReport=null;
+function copyReport(){
+  if(!lastReport) return; const r=lastReport; const line='='.repeat(60);
+  const chips=a=>(a||[]).map(c=>`  · ${c.text}`).join('\n');
+  let o=`MANTLE NARRATIVE INTELLIGENCE AGENT — THE VERDICT\n3-Layer Narrative Report · ${new Date().toLocaleDateString()}\n${line}\n\n`;
+  o+=`HEADLINE\n${r.headline}\n\nEXECUTIVE SUMMARY\n${r.executiveSummary}\n\n`;
+  const k=r.kpis||{};
+  o+=`SUMMARY\nNarrative Strength ${k.narrativeStrength} | Market Sentiment ${k.marketSentiment} | Narrative Momentum ${k.narrativeMomentum} | AI Confidence ${k.aiConfidence}%\n\n`;
+  o+=`${line}\nLAYER 1 — DOMINANT NARRATIVE\n${r.layers?.one?.body||''}\n${chips(r.layers?.one?.chips)}\n\n`;
+  o+=`LAYER 2 — SENTIMENT SHIFT\n${r.layers?.two?.body||''}\nTrigger: ${r.layers?.two?.trigger||'—'}\n${chips(r.layers?.two?.chips)}\n\n`;
+  o+=`LAYER 3 — FORWARD POSITION\n${r.layers?.three?.body||''}\n${chips(r.layers?.three?.chips)}\n\n`;
+  o+=`${line}\nEVIDENCE MATRIX (Overall Confidence ${r.overallConfidence}%)\n`;
+  (r.evidence||[]).forEach(e=>o+=`  [x] ${e.factor} — ${e.rating}\n`);
+  o+=`\nTHE VERDICT\n${r.takeaway}\n\n${line}\nGenerated by the Mantle Narrative Intelligence Agent · Powered by Claude`;
+  navigator.clipboard.writeText(o).then(()=>{ const b=document.getElementById('copy-btn'); const t=b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=t,1600); });
+}
+
+/* ================= Built-in Mantle Q1 2026 demo ================= */
+const DEMO_SOURCES = {
+  social:`X is loud on Mantle this week. Multiple KOLs framing Mantle as "the RWA distribution layer" after the SpaceX tokenization headline. Threads reposting InsightX launch. Sentiment rotating from "L2 with a big treasury" to "where RWAs actually go to be distributed." Some skeptics asking if TVL is sticky or incentive-driven.`,
+  onchain:`RWA TVL on Mantle now $247.5M, up 27.4% QoQ (Q1 2026). Maple Finance syrupUSDT via Aave at $90.1M TVL — largest single RWA position. Growth broad-based, not one whale. Stablecoin depth improving.`,
+  news:`Tokenized SpaceX (SPCXx) now live on Mantle via xStocksFi — first major private-company equity onchain here. InsightX, Mantle's AI-native prediction market, just launched. Agent stack live: ERC-8004 identity + AI Agent Skills + Agent Scaffold + x402 payments via QuestFlow.`,
+  market:`Prediction markets (incl. InsightX) leaning toward continued RWA inflows into Q2. Funding neutral-to-positive on MNT. Market treating the SpaceX listing as a template for more tokenized private equities, not a one-off.`,
+};
+const DEMO_REPORT = {
+  headline:"Mantle is being re-rated from ‘L2 with a treasury’ to the default distribution layer for real-world assets.",
+  executiveSummary:"Mantle's Q1 2026 story has shifted from balance-sheet narrative to product-market fit for RWAs and the agent economy. RWA TVL climbed to $247.5M (+27.4% QoQ), led by Maple's syrupUSDT-via-Aave at $90.1M, while the live tokenized SpaceX (SPCXx) listing and InsightX prediction market give concrete, first-of-kind proof points. Social conviction and onchain flow are moving in the same direction — the signal researchers wait for.",
+  kpis:{ narrativeStrength:84, marketSentiment:"Bullish", sentimentScore:78, narrativeMomentum:81, aiConfidence:88 },
+  ecosystem:[
+    {name:"RWA Growth", value:"$247.5M", note:"+27.4% QoQ, broad-based", tone:"pos"},
+    {name:"Agent Economy", value:"Live", note:"ERC-8004 · x402 · QuestFlow", tone:"pos"},
+    {name:"Prediction Mkts", value:"InsightX", note:"AI-native market launched", tone:"pos"},
+    {name:"Ecosystem", value:"SPCXx", note:"First tokenized SpaceX equity", tone:"pos"},
+    {name:"Settlement", value:"Emerging", note:"Agent-economy positioning early", tone:"cau"},
+  ],
+  sources:[
+    {label:"X / Social", chips:[{text:"RWA distribution framing",tone:"pos"},{text:"Narrative rotation",tone:"pos"},{text:"TVL stickiness Qd",tone:"cau"}]},
+    {label:"Onchain / TVL", chips:[{text:"$247.5M RWA TVL",tone:"pos"},{text:"+27.4% QoQ",tone:"pos"},{text:"Maple $90.1M anchor",tone:"pos"}]},
+    {label:"News & Ecosystem", chips:[{text:"SpaceX SPCXx live",tone:"pos"},{text:"InsightX launched",tone:"pos"},{text:"Agent stack shipped",tone:"pos"}]},
+    {label:"Market / Prediction", chips:[{text:"Inflows favored to Q2",tone:"pos"},{text:"MNT funding neutral+",tone:"neutral"},{text:"SPCXx = template",tone:"pos"}]},
+  ],
+  layers:{
+    one:{ body:"The market now believes Mantle is where real-world assets get distributed, not just a well-capitalized L2. The $247.5M RWA TVL, Maple's $90.1M syrupUSDT position, and the live SpaceX tokenization anchor a concrete thesis: Mantle owns RWA distribution and is building the settlement rail for the agent economy on top of it.",
+      chips:[{text:"RWA distribution layer",tone:"pos"},{text:"Settlement-rail thesis",tone:"pos"},{text:"Product over treasury",tone:"pos"}] },
+    two:{ body:"Sentiment flipped from ‘big treasury, unclear product’ to ‘clear RWA product-market fit.’ The change is visible in both social framing and onchain flow moving together — conviction confirmed by capital, not just posts. Skeptics have narrowed their question to TVL stickiness rather than legitimacy.",
+      trigger:"The live tokenized SpaceX (SPCXx) listing via xStocksFi — the first major private-company equity onchain on Mantle — reframed the ecosystem from speculative to proof-carrying.",
+      chips:[{text:"Social ↔ onchain aligned",tone:"pos"},{text:"Legitimacy settled",tone:"pos"}] },
+    three:{ body:"If the narrative holds, expect more tokenized private equities to use SPCXx as a template, continued RWA inflows into Q2, and the agent economy (ERC-8004, x402, QuestFlow, InsightX) becoming the second leg of the story. Forward position: Mantle compounds as both the RWA distribution layer and the settlement layer agents transact on.",
+      chips:[{text:"More tokenized equities",tone:"pos"},{text:"Q2 RWA inflows",tone:"pos"},{text:"Agent economy leg 2",tone:"cau"}] },
+  },
+  evidence:[
+    {factor:"TVL Growth", detail:"$247.5M RWA, +27.4% QoQ", rating:"Strong Positive", tone:"pos"},
+    {factor:"Social Discussion", detail:"RWA-distribution framing gaining", rating:"Bullish", tone:"pos"},
+    {factor:"News Flow", detail:"SPCXx + InsightX shipped", rating:"Very Positive", tone:"pos"},
+    {factor:"Agent Infrastructure", detail:"ERC-8004, x402, QuestFlow live", rating:"Growing", tone:"cau"},
+    {factor:"RWA Activity", detail:"Maple $90.1M anchor, broad-based", rating:"Strong Positive", tone:"pos"},
+  ],
+  overallConfidence:88,
+  timeline:[
+    {when:"Q4 2025", event:"Treasury-led narrative", detail:"Mantle valued largely on balance sheet; product read unclear.", impact:"cau"},
+    {when:"Q1 2026", event:"RWA TVL breaks out", detail:"RWA TVL reaches $247.5M (+27.4% QoQ); Maple syrupUSDT hits $90.1M.", impact:"pos"},
+    {when:"Q1 2026", event:"SpaceX SPCXx goes live", detail:"First tokenized private-company equity on Mantle via xStocksFi.", impact:"pos"},
+    {when:"Q1 2026", event:"InsightX + agent stack", detail:"AI-native prediction market and ERC-8004/x402/QuestFlow stack ship.", impact:"pos"},
+    {when:"Q2 2026", event:"Narrative continuation", detail:"Prediction markets favor continued RWA inflows and equity tokenization.", impact:"pos"},
+  ],
+  takeaway:"Treat Mantle as the RWA distribution layer with an emerging agent-economy call option — the re-rating is underway, and the open question is TVL durability, not the thesis itself.",
+};
+function loadDemo(){ document.getElementById('src-social').value=DEMO_SOURCES.social; document.getElementById('src-onchain').value=DEMO_SOURCES.onchain; document.getElementById('src-news').value=DEMO_SOURCES.news; document.getElementById('src-market').value=DEMO_SOURCES.market; hideErr(); }
+</script>
+</body>
+</html>
