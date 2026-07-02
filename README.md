@@ -51,7 +51,40 @@ buttons, a neutral grotesque for body copy, sharp corners, and 1px rules through
 Sentiment is encoded with **▲ / ◆ / ▼** glyphs and filled-vs-outline chips rather than
 color — the report reads like a printed research note, not an exchange terminal.
 
-## Run it
+## Live
+
+**Frontend (GitHub Pages):** https://faithabiodun.github.io/SandGlass/
+
+The Pages build runs the built-in **Mantle Q1 2026** demo with zero setup, and supports
+live analysis with your own key or a hosted backend (below).
+
+## Architecture
+
+```
+ Browser ──▶ GitHub Pages (static frontend, index.html)
+                  │
+                  ├─ Demo mode ............. built-in Mantle Q1 2026 report, no network
+                  ├─ Browser key ........... calls the Anthropic API directly
+                  └─ Hosted backend ........ POST /api/analyze  ──▶  Anthropic API
+                                             (key stays server-side)
+```
+
+Because GitHub Pages is static-only, the backend runs as a **serverless function**
+(`api/analyze.js`) that holds the Anthropic key and returns the structured 3-layer
+report. Deploy it in one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/faithabiodun/SandGlass&env=ANTHROPIC_API_KEY&envDescription=Anthropic%20API%20key%20used%20server-side%20to%20call%20Claude)
+
+1. Click **Deploy**, import this repo, and set the `ANTHROPIC_API_KEY` environment variable.
+2. Vercel serves the whole app at `https://<your-app>.vercel.app` — live mode works there
+   with **no key in the browser** (the frontend auto-uses same-origin `/api/analyze`).
+3. To make the *GitHub Pages* build use that backend too, set `BACKEND_URL` near the top
+   of `index.html` to `https://<your-app>.vercel.app/api/analyze` and push.
+
+The function is dependency-free (Node 18+ global `fetch`) and CORS-enabled, so it also
+runs on any Node host.
+
+## Run it locally
 
 It's a single self-contained `index.html` — no build step, no dependencies.
 
@@ -61,17 +94,15 @@ open index.html          # macOS — or just double-click the file
 python3 -m http.server   # then visit http://localhost:8000
 ```
 
-- **Live mode:** paste your own sources, enter an Anthropic API key, and hit **Run
-  Analysis**. The key is used directly from your browser to call Claude and is never
-  stored or sent to any server we control.
 - **Demo mode (no key needed):** click **See a live Mantle example** → **Run Analysis**.
-  This runs the built-in **Mantle Q1 2026** dataset (RWA TVL $247.5M / +27.4% QoQ,
-  Maple syrupUSDT $90.1M, live SpaceX SPCXx tokenization, InsightX launch) so the
-  output is always visible.
+  Runs the built-in **Mantle Q1 2026** dataset (RWA TVL $247.5M / +27.4% QoQ, Maple
+  syrupUSDT $90.1M, live SpaceX SPCXx tokenization, InsightX launch) — output always visible.
+- **Live mode:** paste your own sources and hit **Run Analysis**. With a backend
+  configured, no key is needed; otherwise paste your Anthropic key and the call is made
+  directly from your browser. Either way, nothing is stored.
 
-Default model is **Claude Opus 4.8** (Sonnet 5 / Haiku 4.5 selectable). The frontend
-calls the Anthropic Messages API and constrains Claude to a strict JSON contract that
-forces the three-layer structure and signal chips.
+Default model is **Claude Opus 4.8** (Sonnet 5 / Haiku 4.5 selectable), constrained to a
+strict JSON contract that forces the three-layer structure and signal chips.
 
 ## Screenshots
 | Hero | Inputs |

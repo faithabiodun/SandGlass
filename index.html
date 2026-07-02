@@ -328,9 +328,9 @@
         </div>
         <div class="config">
           <div>
-            <label class="mono" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:12px">Anthropic API Key <span style="color:var(--gray);text-transform:none">— stays in your browser</span></label>
-            <input class="text" id="api-key" type="password" placeholder="sk-ant-…  (used only for the live call)" />
-            <div class="key-note">Used directly from your browser to call Claude. <b>Never stored or sent to any server we control.</b> Leave blank to run the built-in Mantle example.</div>
+            <label class="mono" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:12px">Anthropic API Key <span style="color:var(--gray);text-transform:none">— optional</span></label>
+            <input class="text" id="api-key" type="password" placeholder="sk-ant-…  (optional — leave blank to use the hosted backend)" />
+            <div class="key-note">Live analysis runs through the <b>hosted serverless backend</b> — no key required. Provide your own key only if you'd rather call Claude directly from the browser. Either way, nothing is stored.</div>
           </div>
           <div>
             <label class="mono" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:12px">Model</label>
@@ -552,6 +552,32 @@ async function callClaude(apiKey, model, sources){
   return extractJson(text);
 }
 
+/* ================= Backend (serverless proxy) =================
+   When the app is served over http(s), it calls a same-origin /api/analyze
+   function that keeps the Anthropic key server-side. BACKEND_URL can be set
+   to an absolute endpoint so the static GitHub Pages build reaches the hosted
+   backend. Falls back to a browser key, then the built-in demo. */
+// Set BACKEND_URL to your deployed function (e.g. https://your-app.vercel.app/api/analyze)
+// to give the static GitHub Pages build a hosted, no-key backend. Leave empty to use a
+// same-origin /api/analyze (works automatically when the app itself is hosted on Vercel).
+const BACKEND_URL = "";
+function backendEndpoint(){
+  if (BACKEND_URL) return BACKEND_URL;
+  const host = location.hostname || '';
+  if (host.endsWith('github.io') || location.protocol === 'file:') return ''; // Pages/local: no backend
+  if (location.protocol === 'http:' || location.protocol === 'https:') return '/api/analyze';
+  return '';
+}
+async function callBackend(endpoint, model, sources){
+  const res = await fetch(endpoint, {
+    method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ sources, model }),
+  });
+  const data = await res.json().catch(()=>({error:`Backend returned a non-JSON response (${res.status}).`}));
+  if(!res.ok) throw new Error(data.error || `Backend error (${res.status})`);
+  return data;
+}
+
 /* ================= Run ================= */
 let currentModelName='Claude Opus 4.8';
 function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
@@ -563,15 +589,17 @@ async function _run(){
   const apiKey=val('api-key');
   const sel=document.getElementById('model'); const model=sel.value;
   currentModelName=sel.options[sel.selectedIndex].text.split(' — ')[0];
+  const endpoint=backendEndpoint();
   if(!sources.social&&!sources.onchain&&!sources.news&&!sources.market){ showErr('Paste at least one source, or use “Load Mantle Q1 2026 example”.'); return; }
-  if(!apiKey){ showErr('Enter your Anthropic API key to run a live analysis — or click “Load Mantle Q1 2026 example”, then Run, to see the built-in demo.'); return; }
+  if(!apiKey && !endpoint){ showErr('No backend is configured — add your Anthropic API key, or click “Load Mantle Q1 2026 example”, then Run, to see the built-in demo.'); return; }
   const btn=document.getElementById('run-btn'); btn.disabled=true;
   runStepsUntilDone(); const t0=Date.now();
   try{
-    const report=await callClaude(apiKey,model,sources);
+    // Explicit browser key takes precedence; otherwise route through the hosted backend.
+    const report = apiKey ? await callClaude(apiKey,model,sources) : await callBackend(endpoint,model,sources);
     await new Promise(r=>setTimeout(r, Math.max(0, 2600-(Date.now()-t0))));
     finishSteps(); setTimeout(()=>renderReport(report), 460);
-  }catch(err){ finishSteps(); setTimeout(()=>showErr(err.message||'Something went wrong calling the model.'), 480); }
+  }catch(err){ finishSteps(); setTimeout(()=>showErr(err.message||'Something went wrong running the analysis.'), 480); }
   finally{ btn.disabled=false; }
 }
 function val(id){ return document.getElementById(id).value.trim(); }
